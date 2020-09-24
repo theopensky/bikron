@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # Bikron BCD Binary Clock
 # Adapted from online sources
-# Version 1.3 September 18, 2020
+# Version 1.4 September 24, 2020
 # Unicorn pHat 8 Columns, 4 Rows
 # 
 #    7  65  4  32  10
@@ -69,10 +69,6 @@ rm, gm, bm = COLORS['teal']
 #right Seconds Column 0-7
 secs_col = 0
 rs, gs, bs = COLORS['green']
-#Colons
-colon1 = 0
-colon2 = 0
-rc, gc, bc = COLORS['olive']
 #Weekday
 wday_col = 7
 rw, gw, bw = COLORS['olive']
@@ -136,11 +132,6 @@ def binclock(bminute):
     minsd_list = list(minsd)
     dated_list = list(dated)
 
-  # Render Colons
-#    for y in range(2):
-#      unicorn.set_pixel(colon1,y+1,rc,gc,bc)
-#      unicorn.set_pixel(colon2,y+1,rc,gc,bc)
-
   # Render day of week
     wdbin = bin(int(wdayd)+1) [2:].rjust(4, '0')
     wdbin_list = list(wdbin)
@@ -196,7 +187,7 @@ def binclock(bminute):
         unicorn.set_pixel(hours_col,y,rz,gz,bz)
 
     unicorn.show()
-    time.sleep(1)
+
 #def binclock
 
 # Main Program
