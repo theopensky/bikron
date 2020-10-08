@@ -1,18 +1,11 @@
 #!/usr/bin/env python
 # Bikron BCD Binary Clock
 # Adapted from online sources
-# Version 1.5 October 7, 2020
+# Version 1.6 October 8, 2020
 # Unicorn pHat 8 Columns, 4 Rows
 #
-#    76543210
-#   1********
-#   2********
-#   4********
-#   8********
-# Least Common Digit at the top
-#
 # Optional Displays
-#
+#  LSD - top or bottom
 #  Day of week 1-7 (Sunday - Saturday)
 #  Month 1-12
 #  Day of month - Tens - 0-3
@@ -64,6 +57,7 @@ COLORS = {
     'purple':(128,0,128),
     'indigo':(75,0,130)
 }
+
 #right Date Column (2 columns)
 date_enable = 0
 date_col = 5
@@ -93,13 +87,18 @@ rt, gt, bt = COLORS['maroon']
 wind_enable = 1
 wind_col = 5
 rws, gws, bws = COLORS['olive']
-# GetWeather Control
-weather_enable = 1
-refresh = [8, 18, 28, 38, 48, 58] # Weather on the 8's
-
-
 #background OFF color
 rz, gz, bz = COLORS['black']
+# GetWeather Control
+weather_enable = 0
+refresh = [8, 18, 28, 38, 48, 58] # Weather on the 8's
+
+# Least Significant Digit at top: true or false
+LSD = 0
+
+# Perform the flip:
+if LSD == 0 :
+  unicorn.rotation(180)
 
 def GetWeather():
   if weather_enable :
@@ -191,12 +190,12 @@ def binclock(bminute):
     for x in range(0, 2):
       binary = bin(int(tempd_list[x]))[2:].rjust(4, '0')
       binary_list = list(binary)
-
+      col = x+temp_col if LSD else 7-temp_col-x
       for y in range(0, 4):
         if binary_list[y] == '1':
-          unicorn.set_pixel(x+temp_col,y,rt,gt,bt)
+          unicorn.set_pixel(col,y,rt,gt,bt)
         else:
-          unicorn.set_pixel(x+temp_col,y,rz,gz,bz)
+          unicorn.set_pixel(col,y,rz,gz,bz)
 
   # Calculate and render WindSpeed
     wind = weather[1]
@@ -204,32 +203,35 @@ def binclock(bminute):
     if wind > 15 : windd = 15
     wbin = bin(windd) [2:].rjust(4, '0')
     wbin_list = list(wbin)
+    col = wind_col if LSD else 7-wind_col
     for y in range(0, 4):
       if wbin_list[y] == '1':
-        unicorn.set_pixel(wind_col,y,rws,gws,bws)
+        unicorn.set_pixel(col,y,rws,gws,bws)
       else:
-        unicorn.set_pixel(wind_col,y,rz,gz,bz)
+        unicorn.set_pixel(col,y,rz,gz,bz)
 
   # Render Month
     if month_enable :
       mobin = bin(int(monthd)) [2:].rjust(4, '0')
       mobin_list = list(mobin)
+      col = month_col if LSD else 7-month_col
       for y in range(0, 4):
         if mobin_list[y] == '1':
-          unicorn.set_pixel(month_col,y,rmo,gmo,bmo)
+          unicorn.set_pixel(col,y,rmo,gmo,bmo)
         else:
-          unicorn.set_pixel(wday_col,y,rz,gz,bz)
+          unicorn.set_pixel(col,y,rz,gz,bz)
 
 
   # Render day of week
     if wday_enable :
       wdbin = bin(int(wdayd)+1) [2:].rjust(4, '0')
       wdbin_list = list(wdbin)
+      col = wday_col if LSD else 7-wday_col
       for y in range(0, 4):
         if wdbin_list[y] == '1':
-          unicorn.set_pixel(wday_col,y,rw,gw,bw)
+          unicorn.set_pixel(col,y,rw,gw,bw)
         else:
-          unicorn.set_pixel(wday_col,y,rz,gz,bz)
+          unicorn.set_pixel(col,y,rz,gz,bz)
 
 
   # Render date
@@ -237,45 +239,45 @@ def binclock(bminute):
       for x in range(0, 2):
         binary = bin(int(dated_list[x]))[2:].rjust(4, '0')
         binary_list = list(binary)
-
+        col = x+date_col if LSD else 7-date_col-x
         for y in range(0, 4):
           if binary_list[y] == '1':
-            unicorn.set_pixel(x+date_col,y,rd,gd,bd)
+            unicorn.set_pixel(col,y,rd,gd,bd)
           else:
-            unicorn.set_pixel(x+date_col,y,rz,gz,bz)
-
+            unicorn.set_pixel(col,y,rz,gz,bz)
 
   # Render Seconds
     for x in range(0, 2):
       binary = bin(int(secsd_list[x]))[2:].rjust(4, '0')
       binary_list = list(binary)
-
+      col = (x+secs_col) if LSD else (7-secs_col-x)
       for y in range(0, 4):
         if binary_list[y] == '1':
-          unicorn.set_pixel(x+secs_col,y,rs,gs,bs)
+          unicorn.set_pixel(col,y,rs,gs,bs)
         else:
-          unicorn.set_pixel(x+secs_col,y,rz,gz,bz)
+          unicorn.set_pixel(col,y,rz,gz,bz)
 
   # Render Minutes
     for x in range(0, 2):
       binary = bin(int(minsd_list[x]))[2:].rjust(4, '0')
       binary_list = list(binary)
-
+      col = (x+mins_col) if LSD else (7-mins_col-x)
       for y in range(0, 4):
         if binary_list[y] == '1':
-          unicorn.set_pixel(x+mins_col,y,rm,gm,bm)
+          unicorn.set_pixel(col,y,rm,gm,bm)
         else:
-          unicorn.set_pixel(x+mins_col,y,rz,gz,bz)
+          unicorn.set_pixel(col,y,rz,gz,bz)
 
 
   #Render Hours
     hbin = bin(int(hourd)) [2:].rjust(4, '0')
     hbin_list = list(hbin)
+    col = (hours_col) if LSD else (7-hours_col)
     for y in range(0, 4):
       if hbin_list[y] == '1':
-        unicorn.set_pixel(hours_col,y,rh,gh,bh)
+        unicorn.set_pixel(col,y,rh,gh,bh)
       else:
-        unicorn.set_pixel(hours_col,y,rz,gz,bz)
+        unicorn.set_pixel(col,y,rz,gz,bz)
 
     unicorn.show()
 

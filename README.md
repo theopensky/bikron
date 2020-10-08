@@ -8,25 +8,7 @@ ones of minutes (0-9), tens of seconds (0-5), and ones of seconds (0-9). There a
 lit at any one time (7:57:57 for example). This is important only for calculating voltage and current requirements for clocks made
 with discrete LED's or other types of light bulbs. 
 
-This clock makes use of the first three extra columns by displaying the day of week and day of month.
-
-#    7  65  4  32  10
-#    _  __  _  __  __
-# 1 |*||**||*||**||**|
-# 2 |*||**||*||**||**|
-# 4 |*||**||*||**||**|
-# 8 |*||**||*||**||**|
-#    -  --  -  --  --
-# Least Common Digit at the top
-#
-# 7 - Day of week 1-7 (Sunday - Saturday)
-# 6 - Day of month - Tens - 0-3
-# 5 - Day of month - Ones - 0-9
-# 4 - Hours 1-12
-# 3 - Minutes - Tens - 0-5
-# 2 - Minutes - Ones - 0-9
-# 1 - Seconds - Tens - 0-5
-# 0 - Seconds - Ones - 0-9
+This clock makes use of the first three extra columns by giving you options to display the day of week, month, date, or weather information from Wunderground.
 
 This clock will also read a text file with 'alarms' entered as HH:MM where the clock will display
 a colorful pattern for one minute when the alarm time is matched. 
