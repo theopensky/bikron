@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # Bikron BCD Binary Clock
 # Adapted from online sources
-# Version 1.7 October 8, 2020
+# Version 1.71 October 9, 2020
 # Unicorn pHat 8 Columns, 4 Rows
 #
 # Optional Displays
@@ -182,7 +182,7 @@ def binclock(bminute):
     weather_delay -= 1
 
   minint = int(time.strftime("%M"))
-  if refresh.count(minint):
+  if refresh.count(minint) and not weather_delay :
     weather = GetWeather()
 
   while (bminute == minint):
