@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # Bikron BCD Binary Clock
 # Adapted from online sources
-# Version 1.6 October 8, 2020
+# Version 1.7 October 8, 2020
 # Unicorn pHat 8 Columns, 4 Rows
 #
 # Optional Displays
@@ -57,11 +57,8 @@ COLORS = {
     'purple':(128,0,128),
     'indigo':(75,0,130)
 }
+# Columns are numbered 76543210 left to right
 
-#right Date Column (2 columns)
-date_enable = 0
-date_col = 5
-rd, gd, bd = COLORS['olive']
 #Hours Column (1 column)
 hours_col = 4
 rh, gh, bh = COLORS['green']
@@ -79,33 +76,42 @@ rw, gw, bw = COLORS['maroon']
 month_enable = 0
 month_col = 7
 rmo, gmo, bmo = COLORS['maroon']
-# Temperature Column
+#right Date Column (2 columns)
+date_enable = 0
+date_col = 5
+rd, gd, bd = COLORS['olive']
+#right Temperature Column (2 columns)
 temp_enable = 1
 temp_col = 6
 rt, gt, bt = COLORS['maroon']
-# WindSpeed Column
+# WindSpeed Column (1 column)
 wind_enable = 1
 wind_col = 5
 rws, gws, bws = COLORS['olive']
 #background OFF color
 rz, gz, bz = COLORS['black']
 # GetWeather Control
-weather_enable = 0
+weather_enable = 1
 refresh = [8, 18, 28, 38, 48, 58] # Weather on the 8's
 
-# Least Significant Digit at top: true or false
-LSD = 0
+# Least Significant Digit at the top?: true or false
+LSD = 1
 
 # Perform the flip:
 if LSD == 0 :
   unicorn.rotation(180)
 
+# Load the weather with an X until it's updated
+# And delay the first update by at least one minute
+weather = [52,5]
+weather_delay = 3
+
 def GetWeather():
+  temp = 52
+  wind = 5
   if weather_enable :
-    temp = 52
-    wind = 5
     d = {'api_key': 'yourapikey',
-         'stationID': 'yourstationid'}
+         'stationID': 'yourstationID'}
 
     pm = PoolManager()
     try:
@@ -118,8 +124,8 @@ def GetWeather():
       temp = 52
       wind = 5
 
-    mylist = [temp, wind]
-    return mylist
+  mylist = [temp, wind]
+  return mylist
 
 
 def isalarm(ah, am):
@@ -168,6 +174,13 @@ def rainbow(rminute):
 def binclock(bminute):
   # This function will execute for one minute
   global weather
+  global weather_delay
+
+  if weather_delay > 0 :
+    if weather_delay == 1 :
+      weather = GetWeather()  # Get weather on startup after delay
+    weather_delay -= 1
+
   minint = int(time.strftime("%M"))
   if refresh.count(minint):
     weather = GetWeather()
@@ -305,8 +318,6 @@ def destroy():
   unicorn.clear
 
 # Main Program
-#weather = GetWeather() # Get the weather on startup
-weather = [52,5] # Internet connection not available on boot?
 
 try:
   loop()
