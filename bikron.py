@@ -110,8 +110,8 @@ def GetWeather():
   temp = 52
   wind = 5
   if weather_enable :
-    d = {'api_key': 'yourapikey',
-         'stationID': 'yourstationID'}
+    d = {'api_key': 'yourAPIkey',
+         'stationID': 'yourStationID'}
 
     pm = PoolManager()
     try:
