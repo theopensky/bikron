@@ -14,12 +14,15 @@ This project uses a Raspberry Pi Zero W and a Unicorn pHAT. The PiZero uses NTP 
 * Turn on SSH for remote access.
 * Update the operating system: ```sudo apt update && sudo apt upgrade -y```
 * Install the pHAT libraries: ```curl -sS get.pimoroni.com/unicornhat | bash```
+* Make a directory for the program: ```mkdir Bikron && cd Bikron```
 * Grab a copy of the clock program: ```wget https://raw.githubusercontent.com/theopensky/bikron/master/bikron.py```
-* Grab a copy of the alarms.txt file or make one yourself (resides in /home/pi/Bikron/alarms.txt)
+* Grab a copy of the config file: ```wget https://raw.githubusercontent.com/theopensky/bikron/master/config.py```
+* Grab a copy of the alarms.txt file or make one yourself ```wget https://raw.githubusercontent.com/theopensky/bikron/master/alarms.txt```
+* Modify the config.py file to adjust options, file path, and WeatherUnderground API key.
 * Make the clock program executable: ```sudo chmod +x bikron.py```
 * Create a crontab to start the clock on bootup: ```sudo crontab -e```
 ```
-     @reboot sudo python3 /home/pi/bikron.py
+     @reboot sudo python3 /home/pi/Bikron/bikron.py
      0 4 * * * sudo /sbin/reboot now
 ```
 ##### The 4AM reboot is just to keep things running smoothly.

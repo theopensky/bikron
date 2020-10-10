@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # Bikron BCD Binary Clock
 # Adapted from online sources
-# Version 1.71 October 9, 2020
+# Version 1.8 October 10, 2020
 # Unicorn pHat 8 Columns, 4 Rows
 #
+# See config.py for options
 # Optional Displays
 #  LSD - top or bottom
 #  Day of week 1-7 (Sunday - Saturday)
@@ -27,78 +28,15 @@ import math
 import os.path
 import json
 from urllib3 import PoolManager
+import config as cfg
 
 unicorn.set_layout(unicorn.PHAT)
 unicorn.brightness(0.5)
 unicorn.rotation(0)
 width,height=unicorn.get_shape()
 
-COLORS = {
-    'red':(255,0,0),
-    'lime':(0,255,0),
-    'blue':(0,0,255),
-    'yellow':(255,255,0),
-    'magenta':(255,0,255),
-    'cyan':(0,255,255),
-    'black':(0,0,0),
-    'ltgray':(96,96,96),
-    'white':(255,255,255),
-    'gray':(127,127,127),
-    'grey':(127,127,127),
-    'silver':(192,192,192),
-    'maroon':(128,0,0),
-    'olive':(128,128,0),
-    'green':(0,128,0),
-    'purple':(128,0,128),
-    'teal':(0,128,128),
-    'navy':(0,0,128),
-    'orange':(255,165,0),
-    'gold':(255,215,0),
-    'purple':(128,0,128),
-    'indigo':(75,0,130)
-}
-# Columns are numbered 76543210 left to right
-
-#Hours Column (1 column)
-hours_col = 4
-rh, gh, bh = COLORS['green']
-#right Minutes Column (2 columns)
-mins_col = 2
-rm, gm, bm = COLORS['teal']
-#right Seconds Column (2 columns)
-secs_col = 0
-rs, gs, bs = COLORS['purple']
-#Weekday (1 column)
-wday_enable = 0
-wday_col = 7
-rw, gw, bw = COLORS['maroon']
-#Month (1 column)
-month_enable = 0
-month_col = 7
-rmo, gmo, bmo = COLORS['maroon']
-#right Date Column (2 columns)
-date_enable = 0
-date_col = 5
-rd, gd, bd = COLORS['olive']
-#right Temperature Column (2 columns)
-temp_enable = 1
-temp_col = 6
-rt, gt, bt = COLORS['maroon']
-# WindSpeed Column (1 column)
-wind_enable = 1
-wind_col = 5
-rws, gws, bws = COLORS['olive']
-#background OFF color
-rz, gz, bz = COLORS['black']
-# GetWeather Control
-weather_enable = 1
-refresh = [8, 18, 28, 38, 48, 58] # Weather on the 8's
-
-# Least Significant Digit at the top?: true or false
-LSD = 1
-
 # Perform the flip:
-if LSD == 0 :
+if cfg.LSD == 0 :
   unicorn.rotation(180)
 
 # Load the weather with an X until it's updated
@@ -109,13 +47,10 @@ weather_delay = 3
 def GetWeather():
   temp = 52
   wind = 5
-  if weather_enable :
-    d = {'api_key': 'yourAPIkey',
-         'stationID': 'yourStationID'}
-
+  if cfg.weather_enable :
     pm = PoolManager()
     try:
-      r = pm.request('GET','https://api.weather.com/v2/pws/observations/current?stationId=' + d['stationID'] + '&format=json&units=e&apiKey=' + d['api_key'])
+      r = pm.request('GET','https://api.weather.com/v2/pws/observations/current?stationId=' + cfg.d['stationID'] + '&format=json&units=e&apiKey=' + cfg.d['api_key'])
 
       obs = json.loads(r.data.decode('utf-8'))
       temp = obs['observations'][0]['imperial']['temp']
@@ -127,12 +62,10 @@ def GetWeather():
   mylist = [temp, wind]
   return mylist
 
-
 def isalarm(ah, am):
   alarmfound = 0
-  filepath = '/home/pi/Bikron/alarms.txt'
-  if os.path.exists(filepath) :
-    with open(filepath) as fi:
+  if os.path.exists(cfg.filepath) :
+    with open(cfg.filepath) as fi:
       line = fi.readline()
       while line:
         if (line.find('#') == 0) :
@@ -182,7 +115,7 @@ def binclock(bminute):
     weather_delay -= 1
 
   minint = int(time.strftime("%M"))
-  if refresh.count(minint) and not weather_delay :
+  if cfg.refresh.count(minint) and not weather_delay :
     weather = GetWeather()
 
   while (bminute == minint):
@@ -200,97 +133,99 @@ def binclock(bminute):
     tempd_list = list(tempd)
 
   # Render Temperature
-    for x in range(0, 2):
-      binary = bin(int(tempd_list[x]))[2:].rjust(4, '0')
-      binary_list = list(binary)
-      col = x+temp_col if LSD else 7-temp_col-x
-      for y in range(0, 4):
-        if binary_list[y] == '1':
-          unicorn.set_pixel(col,y,rt,gt,bt)
-        else:
-          unicorn.set_pixel(col,y,rz,gz,bz)
+    if cfg.temp_enable :
+      for x in range(0, 2):
+        binary = bin(int(tempd_list[x]))[2:].rjust(4, '0')
+        binary_list = list(binary)
+        col = x+cfg.temp_col if cfg.LSD else 7-cfg.temp_col-x
+        for y in range(0, 4):
+          if binary_list[y] == '1':
+            unicorn.set_pixel(col,y,cfg.rt,cfg.gt,cfg.bt)
+          else:
+            unicorn.set_pixel(col,y,cfg.rz,cfg.gz,cfg.bz)
 
   # Calculate and render WindSpeed
-    wind = weather[1]
-    windd = wind
-    if wind > 15 : windd = 15
-    wbin = bin(windd) [2:].rjust(4, '0')
-    wbin_list = list(wbin)
-    col = wind_col if LSD else 7-wind_col
-    for y in range(0, 4):
-      if wbin_list[y] == '1':
-        unicorn.set_pixel(col,y,rws,gws,bws)
-      else:
-        unicorn.set_pixel(col,y,rz,gz,bz)
+    if cfg.wind_enable :
+      wind = weather[1]
+      windd = wind
+      if wind > 15 : windd = 15
+      wbin = bin(windd) [2:].rjust(4, '0')
+      wbin_list = list(wbin)
+      col = cfg.wind_col if cfg.LSD else 7-cfg.wind_col
+      for y in range(0, 4):
+        if wbin_list[y] == '1':
+          unicorn.set_pixel(col,y,cfg.rws,cfg.gws,cfg.bws)
+        else:
+          unicorn.set_pixel(col,y,cfg.rz,cfg.gz,cfg.bz)
 
   # Render Month
-    if month_enable :
+    if cfg.month_enable :
       mobin = bin(int(monthd)) [2:].rjust(4, '0')
       mobin_list = list(mobin)
-      col = month_col if LSD else 7-month_col
+      col = cfg.month_col if cfg.LSD else 7-cfg.month_col
       for y in range(0, 4):
         if mobin_list[y] == '1':
-          unicorn.set_pixel(col,y,rmo,gmo,bmo)
+          unicorn.set_pixel(col,y,cfg.rmo,cfg.gmo,cfg.bmo)
         else:
-          unicorn.set_pixel(col,y,rz,gz,bz)
+          unicorn.set_pixel(col,y,cfg.rz,cfg.gz,cfg.bz)
 
 
   # Render day of week
-    if wday_enable :
+    if cfg.wday_enable :
       wdbin = bin(int(wdayd)+1) [2:].rjust(4, '0')
       wdbin_list = list(wdbin)
-      col = wday_col if LSD else 7-wday_col
+      col = cfg.wday_col if cfg.LSD else 7-cfg.wday_col
       for y in range(0, 4):
         if wdbin_list[y] == '1':
-          unicorn.set_pixel(col,y,rw,gw,bw)
+          unicorn.set_pixel(col,y,cfg.rw,cfg.gw,cfg.bw)
         else:
-          unicorn.set_pixel(col,y,rz,gz,bz)
+          unicorn.set_pixel(col,y,cfg.rz,cfg.gz,cfg.bz)
 
 
   # Render date
-    if date_enable :
+    if cfg.date_enable :
       for x in range(0, 2):
         binary = bin(int(dated_list[x]))[2:].rjust(4, '0')
         binary_list = list(binary)
-        col = x+date_col if LSD else 7-date_col-x
+        col = x+cfg.date_col if cfg.LSD else 7-cfg.date_col-x
         for y in range(0, 4):
           if binary_list[y] == '1':
-            unicorn.set_pixel(col,y,rd,gd,bd)
+            unicorn.set_pixel(col,y,cfg.rd,cfg.gd,cfg.bd)
           else:
-            unicorn.set_pixel(col,y,rz,gz,bz)
+            unicorn.set_pixel(col,y,cfg.rz,cfg.gz,cfg.bz)
 
   # Render Seconds
     for x in range(0, 2):
       binary = bin(int(secsd_list[x]))[2:].rjust(4, '0')
       binary_list = list(binary)
-      col = (x+secs_col) if LSD else (7-secs_col-x)
+      col = (x+cfg.secs_col) if cfg.LSD else (7-cfg.secs_col-x)
       for y in range(0, 4):
         if binary_list[y] == '1':
-          unicorn.set_pixel(col,y,rs,gs,bs)
+          unicorn.set_pixel(col,y,cfg.rs,cfg.gs,cfg.bs)
         else:
-          unicorn.set_pixel(col,y,rz,gz,bz)
+          unicorn.set_pixel(col,y,cfg.rz,cfg.gz,cfg.bz)
 
   # Render Minutes
     for x in range(0, 2):
       binary = bin(int(minsd_list[x]))[2:].rjust(4, '0')
       binary_list = list(binary)
-      col = (x+mins_col) if LSD else (7-mins_col-x)
+      col = (x+cfg.mins_col) if cfg.LSD else (7-cfg.mins_col-x)
       for y in range(0, 4):
         if binary_list[y] == '1':
-          unicorn.set_pixel(col,y,rm,gm,bm)
+          unicorn.set_pixel(col,y,cfg.rm,cfg.gm,cfg.bm)
         else:
-          unicorn.set_pixel(col,y,rz,gz,bz)
+          unicorn.set_pixel(col,y,cfg.rz,cfg.gz,cfg.bz)
 
 
   #Render Hours
     hbin = bin(int(hourd)) [2:].rjust(4, '0')
     hbin_list = list(hbin)
-    col = (hours_col) if LSD else (7-hours_col)
+    col = (cfg.hours_col) if cfg.LSD else (7-cfg.hours_col)
     for y in range(0, 4):
       if hbin_list[y] == '1':
-        unicorn.set_pixel(col,y,rh,gh,bh)
+        unicorn.set_pixel(col,y,cfg.rh,cfg.gh,cfg.bh)
       else:
-        unicorn.set_pixel(col,y,rz,gz,bz)
+        unicorn.set_pixel(col,y,cfg.rz,cfg.gz,cfg.bz)
 
     unicorn.show()
 
@@ -323,4 +258,5 @@ try:
   loop()
 except (KeyboardInterrupt):
   destroy()
+
 
