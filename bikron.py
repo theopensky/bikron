@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # Bikron BCD Binary Clock
 # Adapted from online sources
-# Version 1.8 October 10, 2020
+# Version 1.9 October 14, 2020
 # Unicorn pHat 8 Columns, 4 Rows
+#
+# New: days and times to display weather info
+#  For example, only show weather M-F 08:00 - 17:00
 #
 # See config.py for options
 # Optional Displays
@@ -29,6 +32,12 @@ import os.path
 import json
 from urllib3 import PoolManager
 import config as cfg
+import logging
+
+LOG_FILE = "/var/log/bikron"
+LOG_LEVEL = logging.INFO
+LOG_FORMAT = "%(asctime)s %(levelname)s %(message)s"
+logging.basicConfig(filename=LOG_FILE, format=LOG_FORMAT, level=LOG_LEVEL)
 
 unicorn.set_layout(unicorn.PHAT)
 unicorn.brightness(0.5)
@@ -44,7 +53,45 @@ if cfg.LSD == 0 :
 weather = [52,5]
 weather_delay = 3
 
+# Display the weather only on weekdays during working hours
+update_days = [1,2,3,4,5] # Mon-Fri
+update_hours = ('08:00','18:00')
+
+# Remember user settings for dynamic controls
+# to turn weather updates on and off
+sav_weather_enable = cfg.weather_enable
+sav_temp_enable = cfg.temp_enable
+sav_wind_enable = cfg.wind_enable
+sav_wday_enable = cfg.wday_enable
+sav_month_enable = cfg.month_enable
+sav_date_enable = cfg.date_enable
+
+def minutesPerDay(tme):
+    hours, minutes = tme.split(':')
+    return (hours*60)+minutes
+
+def checkTime(tme, tmeRange):
+    return minutesPerDay(tmeRange[0]) <= minutesPerDay(tme) <= minutesPerDay(tmeRange[1])
+
+def checkWeatherUpdate() :
+    timenow = time.strftime("%H:%M")
+    daynow = int(time.strftime("%w"))
+    if daynow not in update_days :
+      return False
+    return checkTime(timenow, update_hours)
+
+def switchOffWeather() :
+      cfg.weather_enable = 0
+      cfg.month_enable = 1
+      cfg.date_enable = 1
+
+def switchOnWeather() :
+      cfg.weather_enable = sav_weather_enable
+      cfg.month_enable = sav_month_enable
+      cfg.date_enable = sav_date_enable
+
 def GetWeather():
+  global weather_delay
   temp = 52
   wind = 5
   if cfg.weather_enable :
@@ -55,7 +102,9 @@ def GetWeather():
       obs = json.loads(r.data.decode('utf-8'))
       temp = obs['observations'][0]['imperial']['temp']
       wind = obs['observations'][0]['imperial']['windSpeed']
-    except MaxRetryError as ex:
+    except Exception as ex :
+      logging.error(repr(ex))
+      weather_delay = 3
       temp = 52
       wind = 5
 
@@ -101,18 +150,24 @@ def rainbow(rminute):
                         unicorn.set_pixel(x,y,int(r),int(g),int(b))
         unicorn.show()
         time.sleep(0.01)
-  unicorn.clear()
+  unicorn.off()
 #def rainbow
 
 def binclock(bminute):
   # This function will execute for one minute
-  global weather
-  global weather_delay
+  global weather, weather_delay, sav_weather_enable
 
   if weather_delay > 0 :
+    cfg.weather_enable = 0 # Temporarily disable weather
     if weather_delay == 1 :
+      cfg.weather_enable = sav_weather_enable
       weather = GetWeather()  # Get weather on startup after delay
     weather_delay -= 1
+
+  if checkWeatherUpdate() :
+    switchOnWeather()
+  else :
+    switchOffWeather()
 
   minint = int(time.strftime("%M"))
   if cfg.refresh.count(minint) and not weather_delay :
@@ -133,7 +188,7 @@ def binclock(bminute):
     tempd_list = list(tempd)
 
   # Render Temperature
-    if cfg.temp_enable :
+    if cfg.temp_enable and cfg.weather_enable:
       for x in range(0, 2):
         binary = bin(int(tempd_list[x]))[2:].rjust(4, '0')
         binary_list = list(binary)
@@ -145,7 +200,7 @@ def binclock(bminute):
             unicorn.set_pixel(col,y,cfg.rz,cfg.gz,cfg.bz)
 
   # Calculate and render WindSpeed
-    if cfg.wind_enable :
+    if cfg.wind_enable and cfg.weather_enable:
       wind = weather[1]
       windd = wind
       if wind > 15 : windd = 15
@@ -250,7 +305,7 @@ def loop():
 
 def destroy():
 
-  unicorn.clear
+  unicorn.off()
 
 # Main Program
 
